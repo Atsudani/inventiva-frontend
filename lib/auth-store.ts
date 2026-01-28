@@ -3,40 +3,60 @@ import { create } from "zustand";
 export type UsuarioAuth = {
   id: number;
   email: string;
-  nombre?: string;
+  nombre: string;
+  role: string;
 };
 
 type AuthState = {
-  accessToken: string | null;
   usuario: UsuarioAuth | null;
-  permisos: string[]; // ej: ["TES_MOVIMIENTOS", "COM_FACTURAS", ...]
-  setAuth: (data: {
-    accessToken: string;
-    usuario: UsuarioAuth | null;
-    permisos: string[];
-  }) => void;
+  permisos: string[];
+  isAuthenticated: boolean;
+  isLoading: boolean;
+
+  setAuth: (data: { usuario: UsuarioAuth; permisos: string[] }) => void;
+
   clearAuth: () => void;
+
+  setLoading: (loading: boolean) => void;
+
+  hasPermission: (permiso: string) => boolean;
+  hasAnyPermission: (permisos: string[]) => boolean;
 };
 
-const TOKEN_KEY = "inventiva_access_token";
-
-export const useAuthStore = create<AuthState>((set) => ({
-  accessToken:
-    typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null,
+export const useAuthStore = create<AuthState>((set, get) => ({
   usuario: null,
   permisos: [],
+  isAuthenticated: false,
+  isLoading: true,
 
-  setAuth: ({ accessToken, usuario, permisos }) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(TOKEN_KEY, accessToken);
-    }
-    set({ accessToken, usuario, permisos });
+  setAuth: ({ usuario, permisos }) => {
+    set({
+      usuario,
+      permisos,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   clearAuth: () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(TOKEN_KEY);
-    }
-    set({ accessToken: null, usuario: null, permisos: [] });
+    set({
+      usuario: null,
+      permisos: [],
+      isAuthenticated: false,
+      isLoading: false,
+    });
+  },
+
+  setLoading: (loading: boolean) => {
+    set({ isLoading: loading });
+  },
+
+  hasPermission: (permiso: string) => {
+    return get().permisos.includes(permiso);
+  },
+
+  hasAnyPermission: (permisos: string[]) => {
+    const userPermisos = get().permisos;
+    return permisos.some((p) => userPermisos.includes(p));
   },
 }));
