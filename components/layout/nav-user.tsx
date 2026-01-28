@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,94 +23,41 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
-// Tipar el estado global
-interface UserLoadState {
-  isLoading: boolean;
-  hasLoaded: boolean;
-  lastLoadTime: number;
-}
-
-// Extender Window
-declare global {
-  interface Window {
-    __USER_LOAD_STATE?: UserLoadState;
-  }
-}
-
-// Inicializar estado global
-if (typeof window !== "undefined" && !window.__USER_LOAD_STATE) {
-  window.__USER_LOAD_STATE = {
-    isLoading: false,
-    hasLoaded: false,
-    lastLoadTime: 0,
-  };
-}
-
 export function NavUser() {
   const { isMobile } = useSidebar();
   const router = useRouter();
   const { usuario } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.__USER_LOAD_STATE) return;
+    // Si ya hay usuario o ya se intentó cargar, no hacer nada
+    if (usuario || hasFetched.current) return;
 
-    const state = window.__USER_LOAD_STATE;
-    const now = Date.now();
-
-    // Protecciones múltiples:
-    // 1. Si ya hay usuario, no cargar
-    if (usuario) return;
-
-    // 2. Si ya está cargando, no cargar
-    if (state.isLoading) {
-      console.log("⏳ Ya está cargando, skipping...");
-      return;
-    }
-
-    // 3. Si ya cargó hace menos de 5 segundos, no cargar
-    if (state.hasLoaded && now - state.lastLoadTime < 5000) {
-      console.log("⏱️ Cargó recientemente, skipping...");
-      return;
-    }
-
-    // Marcar que está cargando
-    state.isLoading = true;
-
-    console.log("🔄 Iniciando carga de usuario...");
+    hasFetched.current = true;
 
     async function loadUser() {
       try {
         const response = await api.get("/auth/me");
-        console.log("✅ Usuario cargado exitosamente");
-
         useAuthStore.getState().setAuth({
           usuario: response.data.usuario,
           permisos: response.data.permisos || [],
         });
-
-        if (window.__USER_LOAD_STATE) {
-          window.__USER_LOAD_STATE.hasLoaded = true;
-          window.__USER_LOAD_STATE.lastLoadTime = Date.now();
-        }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("❌ Error al cargar usuario:", error.message);
-        }
-        // El interceptor maneja el 401 automáticamente
-        if (window.__USER_LOAD_STATE) {
-          window.__USER_LOAD_STATE.hasLoaded = true;
-          window.__USER_LOAD_STATE.lastLoadTime = Date.now();
-        }
-      } finally {
-        if (window.__USER_LOAD_STATE) {
-          window.__USER_LOAD_STATE.isLoading = false;
-        }
+      } catch {
+        // El interceptor maneja el 401 automáticamente (borra cookie y redirige)
+        // No necesitamos hacer nada aquí
       }
     }
 
     loadUser();
-  }, [usuario]);
+  }, []); // Solo ejecutar una vez al montar
+
+  const clearCookieAndRedirect = () => {
+    document.cookie =
+      "access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    useAuthStore.getState().clearAuth();
+    router.push("/login");
+  };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -121,16 +68,7 @@ export function NavUser() {
     } catch (error) {
       console.error("Error al hacer logout:", error);
     } finally {
-      // Reset state
-      if (typeof window !== "undefined" && window.__USER_LOAD_STATE) {
-        window.__USER_LOAD_STATE = {
-          isLoading: false,
-          hasLoaded: false,
-          lastLoadTime: 0,
-        };
-      }
-      useAuthStore.getState().clearAuth();
-      router.push("/login");
+      clearCookieAndRedirect();
     }
   };
 
@@ -143,16 +81,7 @@ export function NavUser() {
     } catch (error) {
       console.error("Error al hacer logout-all:", error);
     } finally {
-      // Reset state
-      if (typeof window !== "undefined" && window.__USER_LOAD_STATE) {
-        window.__USER_LOAD_STATE = {
-          isLoading: false,
-          hasLoaded: false,
-          lastLoadTime: 0,
-        };
-      }
-      useAuthStore.getState().clearAuth();
-      router.push("/login");
+      clearCookieAndRedirect();
     }
   };
 
