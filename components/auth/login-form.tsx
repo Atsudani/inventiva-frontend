@@ -46,6 +46,8 @@ export function LoginForm({
       // 2) Traer datos del usuario (cookie se envía automáticamente)
       const meRes = await api.get("/auth/me");
 
+      console.log(meRes);
+
       // 3) Guardar usuario y permisos en el store
       setAuth({
         usuario: meRes.data.usuario,
@@ -85,9 +87,6 @@ export function LoginForm({
           <form className="p-6 md:p-8" onSubmit={onSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                {/* <h2 className=" text-2xl font-thin text-green-800">
-                  Sociedad Cooperativa Pirapo Agr. Ltda.
-                </h2> */}
                 <h2 className="text-2xl font-bold">Bienvenido</h2>
                 <p className="text-muted-foreground text-balance">
                   Ingresa a tu cuenta de Inventiva

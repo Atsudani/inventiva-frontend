@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
-import { NavProjects } from "@/components/layout/nav-projects";
+// import { NavProjects } from "@/components/layout/nav-projects";
 import { NavUser } from "@/components/layout/nav-user";
 import { TeamSwitcher } from "@/components/layout/team-switcher";
 import {
@@ -25,6 +25,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useAuthStore } from "@/lib/auth-store";
 
 // This is sample data.
 const data = {
@@ -52,13 +53,13 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Sistema Base",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
+          title: "Personas",
           url: "#",
         },
         {
@@ -157,14 +158,19 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  // console.log("🎉Sidebar actual✅:::::::::", data);
+
+  const permisos = useAuthStore((estado) => estado.permisos);
+  console.log(permisos);
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain permisos={permisos} /> {/* Este es el arbol de menu */}
+        {/* <NavMain items={data.navMain} /> */}
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         {/* <NavUser user={data.user} /> */}
