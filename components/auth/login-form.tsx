@@ -85,7 +85,10 @@ export function LoginForm({
           <form className="p-6 md:p-8" onSubmit={onSubmit}>
             <FieldGroup>
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Bienvenido</h1>
+                {/* <h2 className=" text-2xl font-thin text-green-800">
+                  Sociedad Cooperativa Pirapo Agr. Ltda.
+                </h2> */}
+                <h2 className="text-2xl font-bold">Bienvenido</h2>
                 <p className="text-muted-foreground text-balance">
                   Ingresa a tu cuenta de Inventiva
                 </p>
@@ -148,9 +151,17 @@ export function LoginForm({
             </FieldGroup>
           </form>
 
+          {/* <div className="bg-muted relative hidden md:block">
+            <Image
+              src="/logo2.svg"
+              alt="Cooperativa Pirapo"
+              fill
+              className="object-cover dark:brightness-[0.2] dark:grayscale"
+            />
+          </div> */}
           <div className="bg-muted relative hidden md:block">
             <Image
-              src="/placeholder.svg"
+              src="/soja.jpg"
               alt="Cooperativa Pirapo"
               fill
               className="object-cover dark:brightness-[0.2] dark:grayscale"
