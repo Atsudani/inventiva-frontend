@@ -10,7 +10,7 @@ export interface Pagina {
   codigo: string;
   nombre: string;
   ruta: string;
-  icono: string | null;
+  icono: string | undefined;
   orden: number;
   permisos: PermisosAccion;
 }
@@ -19,6 +19,7 @@ export interface Tipo {
   id: number;
   codigo: string;
   nombre: string;
+  icono: string;
   orden: number;
   paginas: Pagina[];
 }
