@@ -10,11 +10,13 @@ export function middleware(request: NextRequest) {
 
   // Usuario logueado intentando ir a login → redirigir a dashboard
   if (isPublicPath && token) {
+    console.log("↪️  Redirigiendo de login a /"); // 👈 AGREGAR LOG
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Usuario NO logueado intentando ir a ruta protegida → redirigir a login
   if (!isPublicPath && !token) {
+    console.log("↪️  Redirigiendo a login"); // 👈 AGREGAR LOG
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

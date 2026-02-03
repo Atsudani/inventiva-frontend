@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,29 +28,6 @@ export function NavUser() {
   const router = useRouter();
   const { usuario } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const hasFetched = useRef(false);
-
-  useEffect(() => {
-    // Si ya hay usuario o ya se intentó cargar, no hacer nada
-    if (usuario || hasFetched.current) return;
-
-    hasFetched.current = true;
-
-    async function loadUser() {
-      try {
-        const response = await api.get("/auth/me");
-        useAuthStore.getState().setAuth({
-          usuario: response.data.usuario,
-          permisos: response.data.permisos || [],
-        });
-      } catch {
-        // El interceptor maneja el 401 automáticamente (borra cookie y redirige)
-        // No necesitamos hacer nada aquí
-      }
-    }
-
-    loadUser();
-  }, []); // Solo ejecutar una vez al montar
 
   const clearCookieAndRedirect = () => {
     document.cookie =

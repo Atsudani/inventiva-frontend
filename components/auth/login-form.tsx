@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import axios from "axios";
@@ -37,7 +37,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router = useRouter();
+  // const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
 
   const [email, setEmail] = useState("");
@@ -107,7 +107,8 @@ export function LoginForm({
       });
 
       // Redirigir al dashboard
-      router.push("/");
+      // router.push("/");
+      window.location.href = "/";
 
       // // 2) Traer datos del usuario (cookie se envía automáticamente)
       // const meRes = await api.get("/auth/me");
