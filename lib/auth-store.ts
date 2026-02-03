@@ -1,5 +1,11 @@
 import { create } from "zustand";
 import { Pagina, PermisosJerarquicos } from "./types/permisos";
+import {
+  AccionPermiso,
+  construirIndices,
+  PaginasIndexadas,
+  PermisosIndexados,
+} from "./auth/permisos-utils";
 
 export type UsuarioAuth = {
   id: number;
@@ -49,6 +55,11 @@ type AuthState = {
   usuario: UsuarioAuth | null;
   contextoOperativo: ContextoOperativo | null;
   permisos: PermisosJerarquicos;
+
+  //nuevos indices
+  permisosPorRuta: PermisosIndexados;
+  paginaPorRuta: PaginasIndexadas;
+
   isAuthenticated: boolean;
   isLoading: boolean;
 
@@ -70,10 +81,7 @@ type AuthState = {
 
   // Helpers para verificar permisos
   tienePermisoRuta: (ruta: string) => boolean;
-  tienePermisoAccion: (
-    ruta: string,
-    accion: "ver" | "crear" | "editar" | "eliminar",
-  ) => boolean;
+  tienePermisoAccion: (ruta: string, accion: AccionPermiso) => boolean;
   obtenerPaginaPorRuta: (ruta: string) => Pagina | null;
 };
 
@@ -84,6 +92,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
 
+  permisosPorRuta: {},
+  paginaPorRuta: {},
+
   setAuth: ({
     usuario,
     empresa,
@@ -92,6 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     sectoresDisponibles,
     permisos,
   }) => {
+    const { permisosPorRuta, paginaPorRuta } = construirIndices(permisos);
     set({
       usuario,
       contextoOperativo: {
@@ -101,6 +113,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         sectoresDisponibles,
       },
       permisos,
+
+      permisosPorRuta,
+      paginaPorRuta,
       isAuthenticated: true,
       isLoading: false,
     });
@@ -111,6 +126,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       usuario: null,
       contextoOperativo: null,
       permisos: [],
+
+      permisosPorRuta: {},
+      paginaPorRuta: {},
       isAuthenticated: false,
       isLoading: false,
     });
@@ -144,59 +162,74 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  // Verificar si el usuario tiene permiso para ver una ruta
   tienePermisoRuta: (ruta: string) => {
-    const { permisos } = get();
-
-    for (const modulo of permisos) {
-      for (const tipo of modulo.tipos) {
-        for (const pagina of tipo.paginas) {
-          if (pagina.ruta === ruta) {
-            return pagina.permisos.ver;
-          }
-        }
-      }
-    }
-
-    return false;
+    const { permisosPorRuta } = get();
+    return permisosPorRuta[ruta]?.ver ?? false;
   },
 
-  // Verificar si el usuario tiene un permiso específico (crear, editar, eliminar)
-  tienePermisoAccion: (
-    ruta: string,
-    accion: "ver" | "crear" | "editar" | "eliminar",
-  ) => {
-    const { permisos } = get();
-
-    for (const modulo of permisos) {
-      for (const tipo of modulo.tipos) {
-        for (const pagina of tipo.paginas) {
-          if (pagina.ruta === ruta) {
-            return pagina.permisos[accion];
-          }
-        }
-      }
-    }
-
-    return false;
+  tienePermisoAccion: (ruta: string, accion: AccionPermiso) => {
+    const { permisosPorRuta } = get();
+    return permisosPorRuta[ruta]?.[accion] ?? false;
   },
 
-  // Obtener página completa por ruta
   obtenerPaginaPorRuta: (ruta: string) => {
-    const { permisos } = get();
-
-    for (const modulo of permisos) {
-      for (const tipo of modulo.tipos) {
-        for (const pagina of tipo.paginas) {
-          if (pagina.ruta === ruta) {
-            return pagina;
-          }
-        }
-      }
-    }
-
-    return null;
+    const { paginaPorRuta } = get();
+    return paginaPorRuta[ruta] ?? null;
   },
+
+  // // Verificar si el usuario tiene permiso para ver una ruta
+  // tienePermisoRuta: (ruta: string) => {
+  //   const { permisos } = get();
+
+  //   for (const modulo of permisos) {
+  //     for (const tipo of modulo.tipos) {
+  //       for (const pagina of tipo.paginas) {
+  //         if (pagina.ruta === ruta) {
+  //           return pagina.permisos.ver;
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   return false;
+  // },
+
+  // // Verificar si el usuario tiene un permiso específico (crear, editar, eliminar)
+  // tienePermisoAccion: (
+  //   ruta: string,
+  //   accion: "ver" | "crear" | "editar" | "eliminar",
+  // ) => {
+  //   const { permisos } = get();
+
+  //   for (const modulo of permisos) {
+  //     for (const tipo of modulo.tipos) {
+  //       for (const pagina of tipo.paginas) {
+  //         if (pagina.ruta === ruta) {
+  //           return pagina.permisos[accion];
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   return false;
+  // },
+
+  // // Obtener página completa por ruta
+  // obtenerPaginaPorRuta: (ruta: string) => {
+  //   const { permisos } = get();
+
+  //   for (const modulo of permisos) {
+  //     for (const tipo of modulo.tipos) {
+  //       for (const pagina of tipo.paginas) {
+  //         if (pagina.ruta === ruta) {
+  //           return pagina;
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   return null;
+  // },
 }));
 
 // ============================================

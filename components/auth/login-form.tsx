@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -18,6 +18,20 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+
+interface Empresa {
+  codigo: string;
+  descripcion: string;
+  nombreCorto: string;
+  ruc: string;
+}
 
 export function LoginForm({
   className,
@@ -29,33 +43,85 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
+
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState<string>("");
+  const [isLoadingEmpresas, setIsLoadingEmpresas] = useState(true);
+
+  //Cargar empresas cuando abro la pagina.
+  useEffect(() => {
+    async function loadEmpresas() {
+      try {
+        const response = await api.get("/empresas");
+        setEmpresas(response.data);
+      } catch (error) {
+        console.error("Error al cargar empresas:", error);
+        setError("Error al cargar las empresas disponibles");
+      } finally {
+        setIsLoadingEmpresas(false);
+      }
+    }
+
+    loadEmpresas();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+
+    if (!email || !password) {
+      setError("Por favor inrese email y contraseña");
+      return;
+    }
+
+    if (!empresaSeleccionada) {
+      setError("Por favor seleccione una empresa");
+      return;
+    }
+
     setLoading(true);
-    setError(null);
 
     try {
       // 1) Login (cookie se setea automáticamente)
-      await api.post("/auth/login", {
+      const response = await api.post("/auth/login", {
         email: email.trim().toLowerCase(),
         password,
+        codEmpresa: empresaSeleccionada,
       });
 
-      // 2) Traer datos del usuario (cookie se envía automáticamente)
-      const meRes = await api.get("/auth/me");
-
-      console.log(meRes);
-
-      // 3) Guardar usuario y permisos en el store
+      // Guardar TODA la información en el store
       setAuth({
-        usuario: meRes.data.usuario,
-        permisos: meRes.data.permisos || [],
+        usuario: response.data.usuario,
+        empresa: response.data.empresa,
+        sector: response.data.sector,
+        sucursal: response.data.sucursal,
+        sectoresDisponibles: response.data.sectoresDisponibles,
+        permisos: response.data.permisos || [],
       });
 
-      // 4) Redirigir al dashboard
+      console.log("✅ Login exitoso con contexto:", {
+        empresa: response.data.empresa.nombre,
+        sector: response.data.sector.nombre,
+        sucursal: response.data.sucursal.nombre,
+      });
+
+      // Redirigir al dashboard
       router.push("/");
+
+      // // 2) Traer datos del usuario (cookie se envía automáticamente)
+      // const meRes = await api.get("/auth/me");
+
+      // console.log(meRes);
+
+      // // 3) Guardar usuario y permisos en el store
+      // setAuth({
+      //   usuario: meRes.data.usuario,
+      //   permisos: meRes.data.permisos || [],
+      // });
+
+      // // 4) Redirigir al dashboard
+      // router.push("/");
     } catch (err: unknown) {
       console.error("Error en login:", err);
 
@@ -136,6 +202,35 @@ export function LoginForm({
               </Field>
 
               <Field>
+                <FieldLabel htmlFor="empresa">Empresa</FieldLabel>
+                <Select
+                  value={empresaSeleccionada}
+                  onValueChange={setEmpresaSeleccionada}
+                  disabled={loading || isLoadingEmpresas}
+                >
+                  <SelectTrigger id="empresa">
+                    <SelectValue
+                      placeholder={
+                        isLoadingEmpresas
+                          ? "Cargando empresas..."
+                          : "Seleccione una empresa"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empresas.map((empresita) => (
+                      <SelectItem
+                        key={empresita.codigo}
+                        value={empresita.codigo}
+                      >
+                        {empresita.descripcion}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field>
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? "Ingresando..." : "Iniciar Sesión"}
                 </Button>
@@ -163,6 +258,8 @@ export function LoginForm({
               src="/soja.jpg"
               alt="Cooperativa Pirapo"
               fill
+              priority
+              sizes="(max-width: 1280px) 100vw, 1280px"
               className="object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>
