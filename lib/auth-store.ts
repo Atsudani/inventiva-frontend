@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { Pagina, PermisosJerarquicos } from "./types/permisos";
 import {
   AccionPermiso,
@@ -56,12 +57,15 @@ type AuthState = {
   contextoOperativo: ContextoOperativo | null;
   permisos: PermisosJerarquicos;
 
-  //nuevos indices
+  // Indices para búsqueda rápida
   permisosPorRuta: PermisosIndexados;
   paginaPorRuta: PaginasIndexadas;
 
   isAuthenticated: boolean;
   isLoading: boolean;
+
+  // Flag para saber si ya se hidrataron los datos de localStorage
+  _hasHydrated: boolean;
 
   setAuth: (data: {
     usuario: UsuarioAuth;
@@ -76,7 +80,9 @@ type AuthState = {
 
   setLoading: (loading: boolean) => void;
 
-  //Cambiar sector (sin re-login)
+  setHasHydrated: (state: boolean) => void;
+
+  // Cambiar sector (sin re-login)
   cambiarSector: (codSector: string) => void;
 
   // Helpers para verificar permisos
@@ -85,152 +91,124 @@ type AuthState = {
   obtenerPaginaPorRuta: (ruta: string) => Pagina | null;
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  usuario: null,
-  contextoOperativo: null,
-  permisos: [],
-  isAuthenticated: false,
-  isLoading: true,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      usuario: null,
+      contextoOperativo: null,
+      permisos: [],
+      isAuthenticated: false,
+      isLoading: true,
 
-  permisosPorRuta: {},
-  paginaPorRuta: {},
+      permisosPorRuta: {},
+      paginaPorRuta: {},
 
-  setAuth: ({
-    usuario,
-    empresa,
-    sector,
-    sucursal,
-    sectoresDisponibles,
-    permisos,
-  }) => {
-    const { permisosPorRuta, paginaPorRuta } = construirIndices(permisos);
-    set({
-      usuario,
-      contextoOperativo: {
+      _hasHydrated: false,
+
+      setHasHydrated: (state: boolean) => {
+        set({ _hasHydrated: state });
+      },
+
+      setAuth: ({
+        usuario,
         empresa,
         sector,
         sucursal,
         sectoresDisponibles,
+        permisos,
+      }) => {
+        const { permisosPorRuta, paginaPorRuta } = construirIndices(permisos);
+        set({
+          usuario,
+          contextoOperativo: {
+            empresa,
+            sector,
+            sucursal,
+            sectoresDisponibles,
+          },
+          permisos,
+          permisosPorRuta,
+          paginaPorRuta,
+          isAuthenticated: true,
+          isLoading: false,
+        });
       },
-      permisos,
 
-      permisosPorRuta,
-      paginaPorRuta,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-  },
-
-  clearAuth: () => {
-    set({
-      usuario: null,
-      contextoOperativo: null,
-      permisos: [],
-
-      permisosPorRuta: {},
-      paginaPorRuta: {},
-      isAuthenticated: false,
-      isLoading: false,
-    });
-  },
-
-  setLoading: (loading: boolean) => {
-    set({ isLoading: loading });
-  },
-
-  cambiarSector: (codSector: string) => {
-    const { contextoOperativo } = get();
-    if (!contextoOperativo) return;
-
-    const nuevoSector = contextoOperativo.sectoresDisponibles.find(
-      (s) => s.codSector === codSector,
-    );
-
-    if (!nuevoSector) return;
-
-    set({
-      contextoOperativo: {
-        ...contextoOperativo,
-        sector: {
-          codigo: nuevoSector.codSector,
-          nombre: nuevoSector.nombre,
-          abreviatura: nuevoSector.abreviatura,
-          porDefecto: nuevoSector.porDefecto,
-        },
-        sucursal: nuevoSector.sucursal,
+      clearAuth: () => {
+        set({
+          usuario: null,
+          contextoOperativo: null,
+          permisos: [],
+          permisosPorRuta: {},
+          paginaPorRuta: {},
+          isAuthenticated: false,
+          isLoading: false,
+        });
       },
-    });
-  },
 
-  tienePermisoRuta: (ruta: string) => {
-    const { permisosPorRuta } = get();
-    return permisosPorRuta[ruta]?.ver ?? false;
-  },
+      setLoading: (loading: boolean) => {
+        set({ isLoading: loading });
+      },
 
-  tienePermisoAccion: (ruta: string, accion: AccionPermiso) => {
-    const { permisosPorRuta } = get();
-    return permisosPorRuta[ruta]?.[accion] ?? false;
-  },
+      cambiarSector: (codSector: string) => {
+        const { contextoOperativo } = get();
+        if (!contextoOperativo) return;
 
-  obtenerPaginaPorRuta: (ruta: string) => {
-    const { paginaPorRuta } = get();
-    return paginaPorRuta[ruta] ?? null;
-  },
+        const nuevoSector = contextoOperativo.sectoresDisponibles.find(
+          (s) => s.codSector === codSector,
+        );
 
-  // // Verificar si el usuario tiene permiso para ver una ruta
-  // tienePermisoRuta: (ruta: string) => {
-  //   const { permisos } = get();
+        if (!nuevoSector) return;
 
-  //   for (const modulo of permisos) {
-  //     for (const tipo of modulo.tipos) {
-  //       for (const pagina of tipo.paginas) {
-  //         if (pagina.ruta === ruta) {
-  //           return pagina.permisos.ver;
-  //         }
-  //       }
-  //     }
-  //   }
+        set({
+          contextoOperativo: {
+            ...contextoOperativo,
+            sector: {
+              codigo: nuevoSector.codSector,
+              nombre: nuevoSector.nombre,
+              abreviatura: nuevoSector.abreviatura,
+              porDefecto: nuevoSector.porDefecto,
+            },
+            sucursal: nuevoSector.sucursal,
+          },
+        });
+      },
 
-  //   return false;
-  // },
+      tienePermisoRuta: (ruta: string) => {
+        const { permisosPorRuta } = get();
+        return permisosPorRuta[ruta]?.ver ?? false;
+      },
 
-  // // Verificar si el usuario tiene un permiso específico (crear, editar, eliminar)
-  // tienePermisoAccion: (
-  //   ruta: string,
-  //   accion: "ver" | "crear" | "editar" | "eliminar",
-  // ) => {
-  //   const { permisos } = get();
+      tienePermisoAccion: (ruta: string, accion: AccionPermiso) => {
+        const { permisosPorRuta } = get();
+        return permisosPorRuta[ruta]?.[accion] ?? false;
+      },
 
-  //   for (const modulo of permisos) {
-  //     for (const tipo of modulo.tipos) {
-  //       for (const pagina of tipo.paginas) {
-  //         if (pagina.ruta === ruta) {
-  //           return pagina.permisos[accion];
-  //         }
-  //       }
-  //     }
-  //   }
+      obtenerPaginaPorRuta: (ruta: string) => {
+        const { paginaPorRuta } = get();
+        return paginaPorRuta[ruta] ?? null;
+      },
+    }),
+    {
+      name: "inventiva-auth", // nombre de la key en localStorage
 
-  //   return false;
-  // },
+      // Solo persistir estos campos (no isLoading, _hasHydrated, ni las funciones)
+      partialize: (state) => ({
+        usuario: state.usuario,
+        contextoOperativo: state.contextoOperativo,
+        permisos: state.permisos,
+        permisosPorRuta: state.permisosPorRuta,
+        paginaPorRuta: state.paginaPorRuta,
+        isAuthenticated: state.isAuthenticated,
+      }),
 
-  // // Obtener página completa por ruta
-  // obtenerPaginaPorRuta: (ruta: string) => {
-  //   const { permisos } = get();
-
-  //   for (const modulo of permisos) {
-  //     for (const tipo of modulo.tipos) {
-  //       for (const pagina of tipo.paginas) {
-  //         if (pagina.ruta === ruta) {
-  //           return pagina;
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   return null;
-  // },
-}));
+      // Callback cuando termina de hidratar desde localStorage
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    },
+  ),
+);
 
 // ============================================
 // EJEMPLO DE USO EN COMPONENTES

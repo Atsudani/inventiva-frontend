@@ -5,49 +5,49 @@ import { useAuthStore } from "./auth-store";
 import { api } from "./api";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const { usuario, setAuth, clearAuth } = useAuthStore();
+  const [isValidating, setIsValidating] = useState(true);
+
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const usuario = useAuthStore((s) => s.usuario);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   useEffect(() => {
-    async function loadUserData() {
-      // Si ya hay usuario (viene del login), no cargar de nuevo
-      if (usuario) {
-        console.log("✅ Usuario ya existe en store, saltando carga");
-        setIsLoading(false);
+    // Esperar a que Zustand hidrate desde localStorage
+    if (!hasHydrated) {
+      return;
+    }
+
+    async function validateSession() {
+      // Si no hay usuario en el store (ni de localStorage), no hay nada que validar
+      if (!usuario) {
+        console.log("📭 No hay usuario en store, nada que validar");
+        setIsValidating(false);
         return;
       }
 
-      console.log("🔄 Cargando datos de usuario...");
+      console.log("🔄 Validando sesión con el servidor...");
 
       try {
-        const response = await api.get("/auth/me");
-
-        if (!response.data.usuario || !response.data.empresa) {
-          throw new Error("Datos incompletos del servidor");
-        }
-
-        console.log("✅ Datos de usuario cargados");
-
-        setAuth({
-          usuario: response.data.usuario,
-          empresa: response.data.empresa,
-          sector: response.data.sector,
-          sucursal: response.data.sucursal,
-          sectoresDisponibles: response.data.sectoresDisponibles || [],
-          permisos: response.data.permisos || [],
-        });
+        // Validar que la cookie/sesión siga siendo válida
+        await api.get("/auth/me");
+        console.log("✅ Sesión válida");
       } catch (error) {
-        console.error("❌ Error cargando datos de usuario:", error);
+        // Si falla (401), el interceptor de api.ts ya limpia y redirige
+        console.error("❌ Sesión inválida:", error);
         clearAuth();
       } finally {
-        setIsLoading(false);
+        setIsValidating(false);
       }
     }
 
-    loadUserData();
-  }, [clearAuth, setAuth, usuario]); // Solo ejecutar una vez
+    validateSession();
+  }, [hasHydrated, usuario, clearAuth]);
 
-  if (isLoading) {
+  // Mostrar loading mientras:
+  // 1. Zustand está hidratando desde localStorage
+  // 2. Estamos validando la sesión con el servidor
+  if (!hasHydrated || (isAuthenticated && isValidating)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
