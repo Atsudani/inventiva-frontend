@@ -9,20 +9,64 @@ export type UsuarioAuth = {
   grupo: string | null;
 };
 
+export type Empresa = {
+  codigo: string;
+  nombre: string;
+  nombreCorto: string;
+  ruc: string;
+};
+
+export type Sector = {
+  codigo: string;
+  nombre: string;
+  abreviatura: string;
+  porDefecto: boolean;
+};
+
+export type Sucursal = {
+  codigo: string;
+  nombre: string;
+  esMatriz: boolean;
+};
+
+export type SectorDisponible = {
+  codEmpresa: string;
+  codSector: string;
+  nombre: string;
+  abreviatura: string;
+  porDefecto: boolean;
+  sucursal: Sucursal;
+};
+
+export type ContextoOperativo = {
+  empresa: Empresa;
+  sector: Sector;
+  sucursal: Sucursal;
+  sectoresDisponibles: SectorDisponible[];
+};
+
 type AuthState = {
   usuario: UsuarioAuth | null;
+  contextoOperativo: ContextoOperativo | null;
   permisos: PermisosJerarquicos;
   isAuthenticated: boolean;
   isLoading: boolean;
 
   setAuth: (data: {
     usuario: UsuarioAuth;
+    empresa: Empresa;
+    sector: Sector;
+    sucursal: Sucursal;
+    sectoresDisponibles: SectorDisponible[];
     permisos: PermisosJerarquicos;
   }) => void;
 
   clearAuth: () => void;
 
   setLoading: (loading: boolean) => void;
+
+  //Cambiar sector (sin re-login)
+  cambiarSector: (codSector: string) => void;
 
   // Helpers para verificar permisos
   tienePermisoRuta: (ruta: string) => boolean;
@@ -35,13 +79,27 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   usuario: null,
+  contextoOperativo: null,
   permisos: [],
   isAuthenticated: false,
   isLoading: true,
 
-  setAuth: ({ usuario, permisos }) => {
+  setAuth: ({
+    usuario,
+    empresa,
+    sector,
+    sucursal,
+    sectoresDisponibles,
+    permisos,
+  }) => {
     set({
       usuario,
+      contextoOperativo: {
+        empresa,
+        sector,
+        sucursal,
+        sectoresDisponibles,
+      },
       permisos,
       isAuthenticated: true,
       isLoading: false,
@@ -51,6 +109,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   clearAuth: () => {
     set({
       usuario: null,
+      contextoOperativo: null,
       permisos: [],
       isAuthenticated: false,
       isLoading: false,
@@ -59,6 +118,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
+  },
+
+  cambiarSector: (codSector: string) => {
+    const { contextoOperativo } = get();
+    if (!contextoOperativo) return;
+
+    const nuevoSector = contextoOperativo.sectoresDisponibles.find(
+      (s) => s.codSector === codSector,
+    );
+
+    if (!nuevoSector) return;
+
+    set({
+      contextoOperativo: {
+        ...contextoOperativo,
+        sector: {
+          codigo: nuevoSector.codSector,
+          nombre: nuevoSector.nombre,
+          abreviatura: nuevoSector.abreviatura,
+          porDefecto: nuevoSector.porDefecto,
+        },
+        sucursal: nuevoSector.sucursal,
+      },
+    });
   },
 
   // Verificar si el usuario tiene permiso para ver una ruta
