@@ -152,7 +152,7 @@ export function LoginForm({
       {/* Logo Inventiva */}
       <div className="flex justify-center">
         <Image
-          src="/inventiva-logo.jpeg"
+          src="/inv.jpeg"
           alt="Inventiva"
           width={180}
           height={60}

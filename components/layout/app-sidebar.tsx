@@ -26,6 +26,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/lib/auth-store";
+import { SidebarLogo } from "../ui/sidebar-logo";
 
 // This is sample data.
 const data = {
@@ -165,7 +166,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <SidebarLogo />
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain permisos={permisos} /> {/* Este es el arbol de menu */}

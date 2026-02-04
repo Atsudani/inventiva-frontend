@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "./auth-store";
 import { api } from "./api";
+import { Spinner } from "@/components/ui/Spinner";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isValidating, setIsValidating] = useState(true);
@@ -48,14 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 1. Zustand está hidratando desde localStorage
   // 2. Estamos validando la sesión con el servidor
   if (!hasHydrated || (isAuthenticated && isValidating)) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   return <>{children}</>;

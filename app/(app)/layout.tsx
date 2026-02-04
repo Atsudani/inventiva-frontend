@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <header className="flex h-14 items-center gap-2 border-b px-4">
+          <header className="flex h-14 items-center gap-2 border-b px-4 bg-gray-50">
             <SidebarTrigger />
             <div className="text-sm font-medium">Inventiva</div>
           </header>
