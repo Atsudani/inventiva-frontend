@@ -28,7 +28,7 @@ interface NavMainProps {
 
 export function NavMain({ permisos }: NavMainProps) {
   const pathname = usePathname();
-  console.log(permisos);
+  // console.log(permisos);
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Menú de accesos</SidebarGroupLabel>
