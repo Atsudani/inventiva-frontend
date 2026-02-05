@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function PruebaPage() {
   return (
@@ -19,6 +20,10 @@ export default function PruebaPage() {
 
           <Button className="w-full" onClick={() => alert("¡Funciona!")}>
             Probar botón
+          </Button>
+
+          <Button onClick={() => toast.success("¡Funciona!")}>
+            Probar Toast
           </Button>
         </CardContent>
       </Card>
