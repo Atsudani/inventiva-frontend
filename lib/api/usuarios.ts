@@ -2,13 +2,14 @@ import { api } from "../api";
 import type {
   Usuario,
   CrearUsuarioDto,
+  ActualizarUsuarioDto,
   UsuariosResponse,
+  UsuariosStats,
   FiltrosUsuarios,
-  ValidarTokenResponse,
-  SetearPasswordDto,
-  CambiarPasswordDto,
-  SolicitarResetPasswordDto,
-  ResetPasswordDto,
+  UsuarioSector,
+  AssignSectorDto,
+  RemoveSectorDto,
+  UpdateSectorDefaultDto,
 } from "../types/usuarios";
 
 // ==========================================
@@ -24,15 +25,22 @@ export const usuariosApi = {
 
     if (filtros?.search) params.append("search", filtros.search);
     if (filtros?.role) params.append("role", filtros.role);
-    if (filtros?.activo !== undefined)
-      params.append("activo", String(filtros.activo));
-    if (filtros?.activado !== undefined)
-      params.append("activado", String(filtros.activado));
-    if (filtros?.pagina) params.append("pagina", String(filtros.pagina));
-    if (filtros?.porPagina)
-      params.append("porPagina", String(filtros.porPagina));
+    if (filtros?.isActive) params.append("isActive", filtros.isActive);
+    if (filtros?.grupoId) params.append("grupoId", String(filtros.grupoId));
+    if (filtros?.page) params.append("page", String(filtros.page));
+    if (filtros?.pageSize) params.append("pageSize", String(filtros.pageSize));
+    if (filtros?.sortBy) params.append("sortBy", filtros.sortBy);
+    if (filtros?.sortOrder) params.append("sortOrder", filtros.sortOrder);
 
     const response = await api.get(`/usuarios?${params.toString()}`);
+    return response.data;
+  },
+
+  /**
+   * Obtener estadísticas de usuarios
+   */
+  obtenerStats: async (): Promise<UsuariosStats> => {
+    const response = await api.get("/usuarios/stats");
     return response.data;
   },
 
@@ -45,109 +53,76 @@ export const usuariosApi = {
   },
 
   /**
-   * Crear un nuevo usuario
-   * El backend generará el token de activación y lo enviará por email (a implementar después)
+   * Actualizar un usuario
    */
-  crear: async (datos: CrearUsuarioDto): Promise<Usuario> => {
-    const response = await api.post("/usuarios", datos);
-    return response.data;
-  },
-
-  /**
-   * Reenviar link de activación a un usuario
-   */
-  reenviarActivacion: async (
-    usuarioId: number,
-  ): Promise<{ mensaje: string }> => {
-    const response = await api.post(
-      `/usuarios/${usuarioId}/reenviar-activacion`,
-    );
-    return response.data;
-  },
-
-  /**
-   * Activar/Desactivar un usuario (solo admin)
-   */
-  toggleActivo: async (usuarioId: number): Promise<Usuario> => {
-    const response = await api.patch(`/usuarios/${usuarioId}/toggle-activo`);
+  actualizar: async (
+    id: number,
+    datos: ActualizarUsuarioDto,
+  ): Promise<Usuario> => {
+    const response = await api.put(`/usuarios/${id}`, datos);
     return response.data;
   },
 
   /**
    * Eliminar un usuario (soft delete)
    */
-  eliminar: async (usuarioId: number): Promise<{ mensaje: string }> => {
-    const response = await api.delete(`/usuarios/${usuarioId}`);
-    return response.data;
-  },
-};
-
-// ==========================================
-// ACTIVACIÓN DE CUENTA
-// ==========================================
-
-export const activacionApi = {
-  /**
-   * Validar si un token de activación es válido
-   */
-  validarToken: async (token: string): Promise<ValidarTokenResponse> => {
-    const response = await api.get(`/auth/activacion/validar/${token}`);
+  eliminar: async (id: number): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.delete(`/usuarios/${id}`);
     return response.data;
   },
 
+  // ==========================================
+  // GESTIÓN DE SECTORES
+  // ==========================================
+
   /**
-   * Activar cuenta y setear contraseña inicial
+   * Obtener sectores de un usuario
    */
-  activarCuenta: async (
-    datos: SetearPasswordDto,
-  ): Promise<{ mensaje: string }> => {
-    const response = await api.post("/auth/activacion/activar", datos);
-    return response.data;
-  },
-};
-
-// ==========================================
-// CAMBIO DE CONTRASEÑA (USUARIO LOGUEADO)
-// ==========================================
-
-export const passwordApi = {
-  /**
-   * Cambiar contraseña del usuario logueado
-   */
-  cambiar: async (datos: CambiarPasswordDto): Promise<{ mensaje: string }> => {
-    const response = await api.post("/auth/cambiar-password", datos);
-    return response.data;
-  },
-};
-
-// ==========================================
-// RECUPERACIÓN DE CONTRASEÑA
-// ==========================================
-
-export const recuperacionApi = {
-  /**
-   * Solicitar reset de contraseña (envía email con token)
-   */
-  solicitar: async (
-    datos: SolicitarResetPasswordDto,
-  ): Promise<{ mensaje: string }> => {
-    const response = await api.post("/auth/recuperacion/solicitar", datos);
+  obtenerSectores: async (id: number): Promise<UsuarioSector[]> => {
+    const response = await api.get(`/usuarios/${id}/sectores`);
     return response.data;
   },
 
   /**
-   * Validar token de recuperación
+   * Asignar sector a un usuario
    */
-  validarToken: async (token: string): Promise<ValidarTokenResponse> => {
-    const response = await api.get(`/auth/recuperacion/validar/${token}`);
+  asignarSector: async (
+    id: number,
+    datos: AssignSectorDto,
+  ): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.post(`/usuarios/${id}/sectores`, datos);
     return response.data;
   },
 
   /**
-   * Resetear contraseña con token
+   * Remover sector de un usuario
    */
-  resetear: async (datos: ResetPasswordDto): Promise<{ mensaje: string }> => {
-    const response = await api.post("/auth/recuperacion/resetear", datos);
+  removerSector: async (
+    id: number,
+    datos: RemoveSectorDto,
+  ): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.delete(`/usuarios/${id}/sectores`, {
+      data: datos,
+    });
+    return response.data;
+  },
+
+  /**
+   * Establecer sector por defecto
+   */
+  setSectorDefault: async (
+    id: number,
+    datos: UpdateSectorDefaultDto,
+  ): Promise<{ ok: boolean; message: string }> => {
+    const response = await api.patch(`/usuarios/${id}/sectores/default`, datos);
+    return response.data;
+  },
+
+  /**
+   * Activar/Desactivar usuario (toggle)
+   */
+  toggleActive: async (id: number): Promise<Usuario> => {
+    const response = await api.put(`/usuarios/${id}/toggle-active`);
     return response.data;
   },
 };

@@ -6,10 +6,9 @@ import {
   Plus,
   Search,
   RefreshCw,
-  Mail,
-  UserX,
-  UserCheck,
   MoreHorizontal,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,10 +39,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import type { FiltrosUsuarios } from "@/lib/types/usuarios";
 import { useAuthStore } from "@/lib/auth-store";
 import {
-  useUsuarios,
-  useReenviarActivacion,
+  useEliminarUsuario,
   useToggleActivo,
+  useUsuarios,
 } from "@/lib/hooks/use-usuarios";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 export default function UsuariosPage() {
   const router = useRouter();
@@ -55,19 +55,21 @@ export default function UsuariosPage() {
   const [filtros, setFiltros] = useState<FiltrosUsuarios>({
     search: "",
     role: undefined,
-    activo: undefined,
-    activado: undefined,
-    pagina: 1,
-    porPagina: 10,
+    isActive: undefined,
+    grupoId: undefined,
+    page: 1,
+    pageSize: 10,
+    sortBy: "CREATED_AT",
+    sortOrder: "DESC",
   });
 
-  // ✨ TanStack Query - Mucho más limpio
+  // TanStack Query
   const { data, isLoading, refetch } = useUsuarios(filtros);
-  const reenviarActivacion = useReenviarActivacion();
+  const eliminarUsuario = useEliminarUsuario();
   const toggleActivo = useToggleActivo();
 
-  const usuarios = data?.usuarios || [];
-  const total = data?.total || 0;
+  const usuarios = data?.data || [];
+  const pagination = data?.pagination;
 
   const formatearFecha = (fecha: string | null) => {
     if (!fecha) return "-";
@@ -113,7 +115,7 @@ export default function UsuariosPage() {
                 placeholder="Buscar por nombre o email..."
                 value={filtros.search}
                 onChange={(e) =>
-                  setFiltros({ ...filtros, search: e.target.value, pagina: 1 })
+                  setFiltros({ ...filtros, search: e.target.value, page: 1 })
                 }
                 className="pl-9"
               />
@@ -126,7 +128,7 @@ export default function UsuariosPage() {
                 setFiltros({
                   ...filtros,
                   role: value === "todos" ? undefined : value,
-                  pagina: 1,
+                  page: 1,
                 })
               }
             >
@@ -135,30 +137,30 @@ export default function UsuariosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los roles</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="user">Usuario</SelectItem>
+                <SelectItem value="ADMIN">Admin</SelectItem>
+                <SelectItem value="USER">Usuario</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Filtro por Estado */}
             <Select
               value={
-                filtros.activo === undefined
+                filtros.isActive === undefined
                   ? "todos"
-                  : filtros.activo
+                  : filtros.isActive === "Y"
                     ? "activo"
                     : "inactivo"
               }
               onValueChange={(value) =>
                 setFiltros({
                   ...filtros,
-                  activo:
+                  isActive:
                     value === "todos"
                       ? undefined
                       : value === "activo"
-                        ? true
-                        : false,
-                  pagina: 1,
+                        ? "Y"
+                        : "N",
+                  page: 1,
                 })
               }
             >
@@ -173,7 +175,11 @@ export default function UsuariosPage() {
             </Select>
 
             {/* Botón Actualizar */}
-            <Button variant="outline" onClick={() => refetch()}>
+            <Button
+              className=" cursor-pointer"
+              variant="outline"
+              onClick={() => refetch()}
+            >
               <RefreshCw className="mr-2 h-4 w-4" />
               Actualizar
             </Button>
@@ -196,12 +202,13 @@ export default function UsuariosPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Usuario</TableHead>
+                  <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rol</TableHead>
+                  <TableHead>Grupo</TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead>Activación</TableHead>
-                  <TableHead>Último Acceso</TableHead>
+                  <TableHead>Email Verificado</TableHead>
+                  <TableHead>Fecha Creación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -209,7 +216,7 @@ export default function UsuariosPage() {
                 {usuarios.map((usuario) => (
                   <TableRow key={usuario.id}>
                     <TableCell className="font-medium">
-                      {usuario.nombre}
+                      {usuario.fullName || "-"}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {usuario.email}
@@ -217,22 +224,55 @@ export default function UsuariosPage() {
                     <TableCell>
                       <Badge variant="outline">{usuario.role}</Badge>
                     </TableCell>
-                    <TableCell>
-                      {usuario.activo ? (
+                    <TableCell className="text-muted-foreground">
+                      {usuario.grupoNombre || "-"}
+                    </TableCell>
+
+                    {/* <TableCell>
+                      {usuario.isActive === "Y" ? (
                         <Badge className="bg-green-500">Activo</Badge>
                       ) : (
                         <Badge variant="destructive">Inactivo</Badge>
                       )}
-                    </TableCell>
+                    </TableCell> */}
+
                     <TableCell>
-                      {usuario.activado ? (
-                        <Badge className="bg-blue-500">Activado</Badge>
+                      <ConfirmDialog
+                        title={
+                          usuario.isActive === "Y"
+                            ? "Desactivar usuario"
+                            : "Activar usuario"
+                        }
+                        description={`¿${usuario.isActive === "Y" ? "Desactivar" : "Activar"} al usuario ${usuario.fullName || usuario.email}?`}
+                        confirmText={
+                          usuario.isActive === "Y" ? "Desactivar" : "Activar"
+                        }
+                        variant={
+                          usuario.isActive === "Y" ? "destructive" : "default"
+                        }
+                        onConfirm={() => toggleActivo.mutate(usuario.id)}
+                        isPending={toggleActivo.isPending}
+                        trigger={
+                          <button className="cursor-pointer">
+                            {usuario.isActive === "Y" ? (
+                              <Badge className="bg-green-500">Activo</Badge>
+                            ) : (
+                              <Badge variant="destructive">Inactivo</Badge>
+                            )}
+                          </button>
+                        }
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      {usuario.emailVerified === "Y" ? (
+                        <Badge className="bg-blue-500">Verificado</Badge>
                       ) : (
                         <Badge variant="secondary">Pendiente</Badge>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {formatearFecha(usuario.ultimoAcceso)}
+                      {formatearFecha(usuario.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -242,33 +282,38 @@ export default function UsuariosPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {!usuario.activado && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                reenviarActivacion.mutate(usuario.id)
-                              }
-                              disabled={reenviarActivacion.isPending}
-                            >
-                              <Mail className="mr-2 h-4 w-4" />
-                              Reenviar Activación
-                            </DropdownMenuItem>
-                          )}
                           <DropdownMenuItem
-                            onClick={() => toggleActivo.mutate(usuario.id)}
-                            disabled={toggleActivo.isPending}
+                            onClick={() =>
+                              router.push(`/admin/usuarios/${usuario.id}`)
+                            }
                           >
-                            {usuario.activo ? (
-                              <>
-                                <UserX className="mr-2 h-4 w-4" />
-                                Desactivar
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="mr-2 h-4 w-4" />
-                                Activar
-                              </>
-                            )}
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Editar
                           </DropdownMenuItem>
+
+                          {/* <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem> */}
+
+                          {/* ✅ Usar ConfirmDialog */}
+                          <ConfirmDialog
+                            title="Eliminar usuario"
+                            description={`¿Desactivar al usuario ${usuario.fullName || usuario.email}? El usuario quedará inactivo pero no se eliminarán sus datos.`}
+                            confirmText="Sí, eliminar"
+                            variant="destructive"
+                            onConfirm={() => eliminarUsuario.mutate(usuario.id)}
+                            isPending={eliminarUsuario.isPending}
+                            trigger={
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            }
+                          />
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -281,28 +326,31 @@ export default function UsuariosPage() {
       </Card>
 
       {/* Paginación */}
-      {!isLoading && usuarios.length > 0 && (
+      {!isLoading && usuarios.length > 0 && pagination && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Mostrando {usuarios.length} de {total} usuarios
+            Mostrando {usuarios.length} de {pagination.total} usuarios
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={filtros.pagina === 1}
+              disabled={!pagination.hasPrevPage}
               onClick={() =>
-                setFiltros({ ...filtros, pagina: filtros.pagina! - 1 })
+                setFiltros({ ...filtros, page: filtros.page! - 1 })
               }
             >
               Anterior
             </Button>
+            <span className="flex items-center px-4 text-sm">
+              Página {pagination.page} de {pagination.totalPages}
+            </span>
             <Button
               variant="outline"
               size="sm"
-              disabled={usuarios.length < filtros.porPagina!}
+              disabled={!pagination.hasNextPage}
               onClick={() =>
-                setFiltros({ ...filtros, pagina: filtros.pagina! + 1 })
+                setFiltros({ ...filtros, page: filtros.page! + 1 })
               }
             >
               Siguiente
@@ -310,6 +358,17 @@ export default function UsuariosPage() {
           </div>
         </div>
       )}
+
+      {/* {!isLoading && usuarios.length > 0 && pagination && (
+        <DataTablePagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          pageSize={pagination.pageSize}
+          totalItems={pagination.total}
+          onPageChange={(page) => setFiltros({ ...filtros, page })}
+          onPageSizeChange={(pageSize) => setFiltros({ ...filtros, pageSize, page: 1 })}
+        />
+      )} */}
     </div>
   );
 }
