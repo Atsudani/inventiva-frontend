@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,8 @@ import {
   useToggleActivo,
   useUsuarios,
 } from "@/lib/hooks/use-usuarios";
+import { useReenviarActivacion } from "@/lib/hooks/use-auth"; // ← Agregar
+
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 export default function UsuariosPage() {
@@ -67,6 +70,8 @@ export default function UsuariosPage() {
   const { data, isLoading, refetch } = useUsuarios(filtros);
   const eliminarUsuario = useEliminarUsuario();
   const toggleActivo = useToggleActivo();
+
+  const reenviarActivacion = useReenviarActivacion(); // ← Agregar
 
   const usuarios = data?.data || [];
   const pagination = data?.pagination;
@@ -94,7 +99,10 @@ export default function UsuariosPage() {
         </div>
 
         {tienePermisoCrear && (
-          <Button onClick={() => router.push("/admin/usuarios/crear")}>
+          <Button
+            className=" cursor-pointer"
+            onClick={() => router.push("/admin/usuarios/crear")}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Usuario
           </Button>
@@ -295,6 +303,19 @@ export default function UsuariosPage() {
                             <Trash2 className="mr-2 h-4 w-4" />
                             Eliminar
                           </DropdownMenuItem> */}
+
+                          {/* ✅ Agregar esta opción */}
+                          {usuario.emailVerified === "N" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                reenviarActivacion.mutate(usuario.id)
+                              }
+                              disabled={reenviarActivacion.isPending}
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Reenviar activación
+                            </DropdownMenuItem>
+                          )}
 
                           {/* ✅ Usar ConfirmDialog */}
                           <ConfirmDialog

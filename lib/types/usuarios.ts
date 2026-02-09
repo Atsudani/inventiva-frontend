@@ -19,8 +19,9 @@ export interface Usuario {
 export interface CrearUsuarioDto {
   email: string;
   fullName: string;
+  role: string;
+  grupoId?: number | null;
 }
-
 export interface ActualizarUsuarioDto {
   fullName?: string;
   codUserInv?: string;

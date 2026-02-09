@@ -5,7 +5,12 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const { pathname } = request.nextUrl;
 
-  const publicPaths = ["/login"];
+  const publicPaths = [
+    "/login",
+    "/setup-password", // ← Agregar
+    "/recuperar-password", // ← Agregar
+    "/reset-password", // ← Agregar
+  ];
   const isPublicPath = publicPaths.includes(pathname);
 
   // Usuario logueado intentando ir a login → redirigir a dashboard

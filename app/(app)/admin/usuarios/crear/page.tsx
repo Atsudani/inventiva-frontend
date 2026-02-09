@@ -43,10 +43,10 @@ export default function CrearUsuarioPage() {
   const form = useForm<CrearUsuarioFormData>({
     resolver: zodResolver(crearUsuarioSchema),
     defaultValues: {
-      nombre: "",
+      fullName: "",
       email: "",
-      role: "user",
-      grupo: "",
+      role: "USER",
+      grupoId: undefined,
     },
   });
 
@@ -85,10 +85,10 @@ export default function CrearUsuarioPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Nombre */}
+              {/* Nombre Completo */}
               <FormField
                 control={form.control}
-                name="nombre"
+                name="fullName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
@@ -148,8 +148,8 @@ export default function CrearUsuarioPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="user">Usuario</SelectItem>
+                        <SelectItem value="ADMIN">Administrador</SelectItem>
+                        <SelectItem value="USER">Usuario</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -157,21 +157,27 @@ export default function CrearUsuarioPage() {
                 )}
               />
 
-              {/* Grupo (opcional) */}
+              {/* Grupo (opcional) - TODO: Cargar desde API */}
               <FormField
                 control={form.control}
-                name="grupo"
+                name="grupoId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Grupo (opcional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ventas, Contabilidad, etc."
-                        {...field}
-                        value={field.value || ""}
-                        disabled={crearUsuario.isPending}
-                      />
-                    </FormControl>
+                    <Select
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      disabled={crearUsuario.isPending}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un grupo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* TODO: Cargar grupos desde API */}
+                        <SelectItem value="0">Sin grupo</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormDescription>
                       Los grupos se usan para organizar usuarios y asignar
                       permisos

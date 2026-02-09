@@ -4,30 +4,32 @@ import { z } from "zod";
  * Schema para crear usuario
  */
 export const crearUsuarioSchema = z.object({
-  nombre: z
+  fullName: z
     .string()
-    .min(3, "El nombre debe tener al menos 3 caracteres")
-    .max(100, "El nombre es demasiado largo")
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .max(120, "El nombre no puede exceder 120 caracteres")
     .trim(),
 
   email: z
     .string()
     .min(1, "El email es requerido")
     .email("Email inválido")
+    .max(150, "El email es demasiado largo")
     .toLowerCase()
     .trim(),
 
-  role: z.enum(["admin", "user"], {
+  role: z.enum(["ADMIN", "USER"], {
     required_error: "Selecciona un rol",
     invalid_type_error: "Rol inválido",
   }),
 
-  grupo: z
-    .string()
-    .trim()
+  grupoId: z
+    .number({
+      invalid_type_error: "Selecciona un grupo válido",
+    })
     .optional()
     .nullable()
-    .transform((val) => (val === "" ? null : val)), // Convertir string vacío a null
+    .transform((val) => (val === 0 ? null : val)), // Convertir 0 a null si es necesario
 });
 
 /**

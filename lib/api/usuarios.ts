@@ -45,6 +45,15 @@ export const usuariosApi = {
   },
 
   /**
+   * Crear un nuevo usuario (admin)
+   * El backend generará el token de activación y enviará email
+   */
+  crear: async (datos: CrearUsuarioDto): Promise<Usuario> => {
+    const response = await api.post("/auth/admin/create-user", datos);
+    return response.data;
+  },
+
+  /**
    * Obtener un usuario por ID
    */
   obtenerPorId: async (id: number): Promise<Usuario> => {

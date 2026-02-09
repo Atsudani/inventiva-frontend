@@ -48,7 +48,7 @@ export function useCrearUsuario() {
         description: "El usuario ha sido creado exitosamente",
       });
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error("Error al crear usuario", {
         description:
           error.response?.data?.message || "No se pudo crear el usuario",
