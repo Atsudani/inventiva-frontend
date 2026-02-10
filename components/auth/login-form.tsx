@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import Link from "next/link";
 
 interface Empresa {
   codigo: string;
@@ -193,15 +194,30 @@ export function LoginForm({
               </Field>
 
               <Field>
-                <div className="flex items-center">
+                <div className="flex items-center justify-between">
                   <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                  <a
+                  {/* <a
                     href="#"
                     className="ml-auto text-sm underline-offset-2 hover:underline"
                     tabIndex={-1}
                   >
                     ¿Olvidaste tu contraseña?
-                  </a>
+                  </a> */}
+                  {/* <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-muted-foreground"
+                    onClick={() => router.push("/recuperar-password")}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Button> */}
+
+                  <Link
+                    href="/recuperar-password"
+                    className="text-muted-foreground hover:text-primary underline"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
                 </div>
                 <Input
                   id="password"

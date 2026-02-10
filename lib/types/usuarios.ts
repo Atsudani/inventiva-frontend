@@ -25,7 +25,7 @@ export interface CrearUsuarioDto {
 export interface ActualizarUsuarioDto {
   fullName?: string;
   codUserInv?: string;
-  grupoId?: number;
+  grupoId?: number | null;
   role?: string;
   isActive?: string;
 }

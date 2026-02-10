@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, KeyRound } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -15,109 +22,84 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import {
-  cambiarPasswordSchema,
-  type CambiarPasswordFormData,
-} from "@/lib/schemas/usuarios";
-import { passwordApi } from "@/lib/api/usuarios";
-import { useAuthStore } from "@/lib/auth-store";
-import { toast } from "sonner";
+  changePasswordSchema,
+  type ChangePasswordFormData,
+} from "@/lib/schemas/auth";
+import { useChangePassword } from "@/lib/hooks/use-auth";
 
 export default function CambiarPasswordPage() {
-  const usuario = useAuthStore((s) => s.usuario);
-  const [exitoso, setExitoso] = useState(false);
+  const router = useRouter();
+  const changePassword = useChangePassword();
 
-  const form = useForm<CambiarPasswordFormData>({
-    resolver: zodResolver(cambiarPasswordSchema),
+  const form = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
     defaultValues: {
-      passwordActual: "",
-      passwordNuevo: "",
-      passwordConfirm: "",
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
     },
   });
 
-  const onSubmit = async (data: CambiarPasswordFormData) => {
-    try {
-      await passwordApi.cambiar(data);
-
-      setExitoso(true);
-      toast.success("Contraseña actualizada", {
-        description: "Tu contraseña ha sido cambiada exitosamente",
-      });
-
-      // Limpiar formulario
-      form.reset();
-
-      // Ocultar mensaje de éxito después de 5 segundos
-      setTimeout(() => {
-        setExitoso(false);
-      }, 5000);
-    } catch (error: any) {
-      const mensaje =
-        error.response?.data?.message || "Error al cambiar la contraseña";
-
-      toast.error("Error", {
-        description: mensaje,
-      });
-
-      // Si la contraseña actual es incorrecta, marcar el campo con error
-      if (error.response?.status === 401 || mensaje.includes("incorrecta")) {
-        form.setError("passwordActual", {
-          type: "manual",
-          message: "La contraseña actual es incorrecta",
-        });
-      }
-    }
+  const onSubmit = async (data: ChangePasswordFormData) => {
+    changePassword.mutate(
+      {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        confirmNewPassword: data.confirmNewPassword,
+      },
+      {
+        onSuccess: () => {
+          form.reset();
+          // Opcionalmente redirigir al perfil después de 2 segundos
+          setTimeout(() => {
+            router.push("/perfil");
+          }, 2000);
+        },
+      },
+    );
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Cambiar Contraseña
-        </h1>
-        <p className="text-muted-foreground">
-          Actualiza tu contraseña de forma segura
-        </p>
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Cambiar Contraseña
+          </h1>
+          <p className="text-muted-foreground">
+            Actualiza tu contraseña de forma segura
+          </p>
+        </div>
       </div>
 
-      {/* Tarjeta de Usuario */}
+      {/* Formulario */}
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Seguridad de la Cuenta
-          </CardTitle>
+          <CardTitle>Nueva Contraseña</CardTitle>
           <CardDescription>
-            Estás cambiando la contraseña para:{" "}
-            <strong>{usuario?.email}</strong>
+            Ingresa tu contraseña actual y elige una nueva
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Contraseña Actual */}
               <FormField
                 control={form.control}
-                name="passwordActual"
+                name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Contraseña Actual <span className="text-red-500">*</span>
-                    </FormLabel>
+                    <FormLabel>Contraseña Actual</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="Ingresa tu contraseña actual"
+                        placeholder="Tu contraseña actual"
                         {...field}
-                        disabled={form.formState.isSubmitting}
+                        disabled={changePassword.isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -128,18 +110,16 @@ export default function CambiarPasswordPage() {
               {/* Nueva Contraseña */}
               <FormField
                 control={form.control}
-                name="passwordNuevo"
+                name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Nueva Contraseña <span className="text-red-500">*</span>
-                    </FormLabel>
+                    <FormLabel>Nueva Contraseña</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="Mínimo 8 caracteres"
                         {...field}
-                        disabled={form.formState.isSubmitting}
+                        disabled={changePassword.isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -150,19 +130,16 @@ export default function CambiarPasswordPage() {
               {/* Confirmar Nueva Contraseña */}
               <FormField
                 control={form.control}
-                name="passwordConfirm"
+                name="confirmNewPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      Confirmar Nueva Contraseña{" "}
-                      <span className="text-red-500">*</span>
-                    </FormLabel>
+                    <FormLabel>Confirmar Nueva Contraseña</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="Repite tu nueva contraseña"
                         {...field}
-                        disabled={form.formState.isSubmitting}
+                        disabled={changePassword.isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -170,49 +147,24 @@ export default function CambiarPasswordPage() {
                 )}
               />
 
-              {/* Mensaje de éxito */}
-              {exitoso && (
-                <div className="flex items-center gap-2 rounded-md bg-green-50 p-3 text-sm text-green-700 border border-green-200">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>¡Contraseña actualizada exitosamente!</span>
-                </div>
-              )}
-
-              {/* Botones */}
+              {/* Acciones */}
               <div className="flex gap-4 pt-4">
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
+                <Button type="submit" disabled={changePassword.isPending}>
+                  {changePassword.isPending
                     ? "Actualizando..."
                     : "Cambiar Contraseña"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    setExitoso(false);
-                  }}
-                  disabled={form.formState.isSubmitting}
+                  onClick={() => router.back()}
+                  disabled={changePassword.isPending}
                 >
                   Cancelar
                 </Button>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
-
-      {/* Consejos de Seguridad */}
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-base">Consejos de Seguridad</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Usa al menos 8 caracteres</p>
-          <p>• Combina letras mayúsculas, minúsculas, números y símbolos</p>
-          <p>• No uses información personal fácil de adivinar</p>
-          <p>• Evita reutilizar contraseñas de otros servicios</p>
-          <p>• Considera usar un gestor de contraseñas</p>
         </CardContent>
       </Card>
     </div>

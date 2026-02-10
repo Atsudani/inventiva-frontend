@@ -88,3 +88,33 @@ export const solicitarResetSchema = z.object({
 });
 
 export type SolicitarResetFormData = z.infer<typeof solicitarResetSchema>;
+
+/**
+ * Schema para editar usuario
+ */
+export const editarUsuarioSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .max(120, "El nombre no puede exceder 120 caracteres")
+    .trim(),
+
+  role: z.enum(["ADMIN", "USER"], {
+    required_error: "Selecciona un rol",
+    invalid_type_error: "Rol inválido",
+  }),
+
+  grupoId: z
+    .number({
+      invalid_type_error: "Selecciona un grupo válido",
+    })
+    .optional()
+    .nullable()
+    .transform((val) => (val === 0 ? null : val)),
+
+  isActive: z.enum(["Y", "N"], {
+    required_error: "Selecciona un estado",
+  }),
+});
+
+export type EditarUsuarioFormData = z.infer<typeof editarUsuarioSchema>;

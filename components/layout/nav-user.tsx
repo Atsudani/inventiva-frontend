@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
+import {
+  BadgeCheck,
+  Bell,
+  ChevronsUpDown,
+  KeyRound,
+  LogOut,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -117,18 +123,30 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <BadgeCheck />
                 Mi Cuenta
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => router.push("/perfil/cambiar-password")}
+              >
+                <KeyRound />
+                Cambiar Contraseña
+              </DropdownMenuItem>
+
               <DropdownMenuItem>
                 <Bell />
                 Notificaciones
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem
               onClick={handleLogout}
               disabled={isLoggingOut}

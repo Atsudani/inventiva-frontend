@@ -19,7 +19,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // console.log("🎉Sidebar actual✅:::::::::", data);
 
   const permisos = useAuthStore((estado) => estado.permisos);
-  console.log(permisos);
+  // console.log(permisos);
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

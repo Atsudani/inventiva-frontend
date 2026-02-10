@@ -308,7 +308,7 @@ export default function UsuariosPage() {
                           {usuario.emailVerified === "N" && (
                             <DropdownMenuItem
                               onClick={() =>
-                                reenviarActivacion.mutate(usuario.id)
+                                reenviarActivacion.mutate(usuario.email)
                               }
                               disabled={reenviarActivacion.isPending}
                             >
