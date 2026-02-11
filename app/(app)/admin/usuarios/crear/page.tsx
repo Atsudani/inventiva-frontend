@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useGruposSelect } from "@/lib/hooks/use-grupos";
 import {
   Form,
   FormControl,
@@ -38,6 +39,7 @@ import { useCrearUsuario } from "@/lib/hooks/use-usuarios";
 export default function CrearUsuarioPage() {
   const router = useRouter();
   const crearUsuario = useCrearUsuario();
+  const { data: grupos, isLoading: isLoadingGrupos } = useGruposSelect();
 
   // ✨ React Hook Form + Zod
   const form = useForm<CrearUsuarioFormData>({
@@ -157,7 +159,8 @@ export default function CrearUsuarioPage() {
                 )}
               />
 
-              {/* Grupo (opcional) - TODO: Cargar desde API */}
+              {/* Grupo (opcional) */}
+              {/* Grupo (opcional) */}
               <FormField
                 control={form.control}
                 name="grupoId"
@@ -165,8 +168,11 @@ export default function CrearUsuarioPage() {
                   <FormItem>
                     <FormLabel>Grupo (opcional)</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(Number(value))}
-                      disabled={crearUsuario.isPending}
+                      onValueChange={(value) =>
+                        field.onChange(value === "0" ? null : Number(value))
+                      }
+                      value={field.value?.toString() || "0"}
+                      disabled={crearUsuario.isPending || isLoadingGrupos}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -174,8 +180,15 @@ export default function CrearUsuarioPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {/* TODO: Cargar grupos desde API */}
                         <SelectItem value="0">Sin grupo</SelectItem>
+                        {grupos?.map((grupo) => (
+                          <SelectItem
+                            key={grupo.id}
+                            value={grupo.id.toString()}
+                          >
+                            {grupo.nombre}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>

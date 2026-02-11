@@ -34,6 +34,7 @@ import {
   type EditarUsuarioFormData,
 } from "@/lib/schemas/usuarios";
 import { useUsuario, useActualizarUsuario } from "@/lib/hooks/use-usuarios";
+import { useGruposSelect } from "@/lib/hooks/use-grupos";
 import { useEffect, useState } from "react";
 
 export default function EditarUsuarioPage() {
@@ -43,6 +44,7 @@ export default function EditarUsuarioPage() {
 
   const { data: usuario, isLoading } = useUsuario(id);
   const actualizarUsuario = useActualizarUsuario();
+  const { data: grupos, isLoading: isLoadingGrupos } = useGruposSelect();
 
   const form = useForm<EditarUsuarioFormData>({
     resolver: zodResolver(editarUsuarioSchema),
@@ -54,6 +56,7 @@ export default function EditarUsuarioPage() {
     },
   });
   const [selectKey, setSelectKey] = useState(0);
+  const [selectKeyGrupo, setSelectKeyGrupo] = useState(0);
 
   useEffect(() => {
     if (!usuario) return;
@@ -77,6 +80,7 @@ export default function EditarUsuarioPage() {
 
     // fuerza remount UNA vez al cargar/resetear data
     setSelectKey((k) => k + 1);
+    setSelectKeyGrupo((k) => k + 1);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario]);
@@ -218,7 +222,8 @@ export default function EditarUsuarioPage() {
                 )}
               />
 
-              {/* Grupo (opcional) - TODO: Cargar desde API */}
+              {/* Grupo (opcional)  */}
+              {/* Grupo (opcional) */}
               <FormField
                 control={form.control}
                 name="grupoId"
@@ -226,11 +231,12 @@ export default function EditarUsuarioPage() {
                   <FormItem>
                     <FormLabel>Grupo (opcional)</FormLabel>
                     <Select
+                      key={selectKeyGrupo}
                       onValueChange={(value) =>
                         field.onChange(value === "0" ? null : Number(value))
                       }
                       value={field.value?.toString() || "0"}
-                      disabled={actualizarUsuario.isPending}
+                      disabled={actualizarUsuario.isPending || isLoadingGrupos}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -238,8 +244,15 @@ export default function EditarUsuarioPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {/* TODO: Cargar grupos desde API */}
                         <SelectItem value="0">Sin grupo</SelectItem>
+                        {grupos?.map((grupo) => (
+                          <SelectItem
+                            key={grupo.id}
+                            value={grupo.id.toString()}
+                          >
+                            {grupo.nombre}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
