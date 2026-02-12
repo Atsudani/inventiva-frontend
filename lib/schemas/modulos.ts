@@ -1,0 +1,95 @@
+// lib/schemas/modulos.ts
+
+import { z } from "zod";
+
+/**
+ * Schema para crear módulo
+ */
+export const crearModuloSchema = z.object({
+  codigo: z
+    .string()
+    .min(1, "El código es requerido")
+    .max(50, "El código no puede exceder 50 caracteres")
+    .trim()
+    .transform((val) => val.toUpperCase()),
+
+  nombre: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "El nombre no puede exceder 100 caracteres")
+    .trim(),
+
+  descripcion: z
+    .string()
+    .max(500, "La descripción no puede exceder 500 caracteres")
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
+
+  icono: z
+    .string()
+    .max(50, "El icono no puede exceder 50 caracteres")
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
+
+  orden: z
+    .number({
+      invalid_type_error: "El orden debe ser un número",
+    })
+    .int("El orden debe ser un número entero")
+    .min(0, "El orden no puede ser negativo")
+    .optional()
+    .default(0),
+});
+
+export type CrearModuloFormData = z.infer<typeof crearModuloSchema>;
+
+/**
+ * Schema para editar módulo
+ */
+export const editarModuloSchema = z.object({
+  codigo: z
+    .string()
+    .min(1, "El código es requerido")
+    .max(50, "El código no puede exceder 50 caracteres")
+    .trim()
+    .transform((val) => val.toUpperCase()),
+
+  nombre: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "El nombre no puede exceder 100 caracteres")
+    .trim(),
+
+  descripcion: z
+    .string()
+    .max(500, "La descripción no puede exceder 500 caracteres")
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
+
+  icono: z
+    .string()
+    .max(50, "El icono no puede exceder 50 caracteres")
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" ? undefined : val)),
+
+  orden: z
+    .number({
+      invalid_type_error: "El orden debe ser un número",
+    })
+    .int("El orden debe ser un número entero")
+    .min(0, "El orden no puede ser negativo"),
+
+  activo: z.enum(["S", "N"], {
+    required_error: "Selecciona un estado",
+  }),
+});
+
+export type EditarModuloFormData = z.infer<typeof editarModuloSchema>;
