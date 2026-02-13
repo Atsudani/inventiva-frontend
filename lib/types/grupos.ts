@@ -11,3 +11,16 @@ export interface Grupo {
 }
 
 export type GrupoSelect = Pick<Grupo, "id" | "nombre">;
+
+export interface CrearGrupoDto {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface ActualizarGrupoDto {
+  codigo?: string;
+  nombre?: string;
+  descripcion?: string;
+  activo?: string;
+}
